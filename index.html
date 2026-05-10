@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大提琴練習紀錄</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f9f9f9; color: #333; font-family: sans-serif; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-md mx-auto space-y-6">
+        <h1 class="text-2xl font-light text-center border-b pb-4">Cello Practice Log</h1>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="card text-center">
+                <div class="text-sm text-gray-500">總時數</div>
+                <div id="totalHours" class="text-2xl font-semibold">0</div>
+            </div>
+            <div class="card text-center">
+                <div class="text-sm text-gray-500">總課堂</div>
+                <div id="totalLessons" class="text-2xl font-semibold">0</div>
+            </div>
+        </div>
+
+        <div class="card space-y-4">
+            <h2 class="font-medium">今日登記</h2>
+            <div>
+                <label class="block text-xs text-gray-400">教材名稱 (如: Suzuki Vol.1)</label>
+                <input type="text" id="bookName" class="w-full border-b p-2 outline-none" placeholder="輸入教材...">
+            </div>
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400">練習分鐘</label>
+                    <input type="number" id="minutes" class="w-full border-b p-2 outline-none" value="30">
+                </div>
+                <div class="flex items-end pb-2">
+                    <input type="checkbox" id="isLesson" class="mr-2"> <span class="text-sm">今日上課</span>
+                </div>
+            </div>
+            <button onclick="saveLog()" class="w-full bg-stone-700 text-white py-3 rounded-lg hover:bg-stone-800 transition">完成打卡</button>
+        </div>
+
+        <div class="card">
+            <h2 class="font-medium mb-4">教材練習統計</h2>
+            <ul id="bookList" class="space-y-3 text-sm">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        let logs = JSON.parse(localStorage.getItem('celloLogs')) || [];
+
+        function saveLog() {
+            const book = document.getElementById('bookName').value || '未分類';
+            const mins = parseInt(document.getElementById('minutes').value) || 0;
+            const lesson = document.getElementById('isLesson').checked;
+
+            const entry = {
+                date: new Date().toLocaleDateString(),
+                book: book,
+                duration: mins,
+                isLesson: lesson
+            };
+
+            logs.push(entry);
+            localStorage.setItem('celloLogs', JSON.stringify(logs));
+            render();
+            
+            // 清空輸入欄位
+            document.getElementById('minutes').value = 30;
+            document.getElementById('isLesson').checked = false;
+        }
+
+        function render() {
+            let totalMins = 0;
+            let lessons = 0;
+            const bookStats = {};
+
+            logs.forEach(log => {
+                totalMins += log.duration;
+                if (log.isLesson) lessons++;
+                
+                if (!bookStats[log.book]) bookStats[log.book] = 0;
+                bookStats[log.book] += log.duration;
+            });
+
+            // 更新總計 (換算成小時)
+            document.getElementById('totalHours').innerText = (totalMins / 60).toFixed(1) + 'h';
+            document.getElementById('totalLessons').innerText = lessons;
+
+            // 更新教材清單
+            const bookList = document.getElementById('bookList');
+            bookList.innerHTML = '';
+            for (const [name, duration] of Object.entries(bookStats)) {
+                const li = document.createElement('li');
+                li.className = "flex justify-between border-b pb-2";
+                li.innerHTML = `<span>${name}</span><span class="font-mono">${(duration / 60).toFixed(1)} 小時</span>`;
+                bookList.appendChild(li);
+            }
+        }
+
+        // 初始化渲染
+        render();
+    </script>
+</body>
+</html>
