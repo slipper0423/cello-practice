@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的大提琴練習日誌 2025</title>
+    <title>我的大提琴紀錄 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Serif TC', serif; background-color: #fdfaf5; color: #4a3728; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid #eee5d8; font-size: 0.8rem; }
+        .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid #eee5d8; font-size: 0.8rem; background: white; }
         .day-cell:hover { background-color: #f3e5d0; }
         .day-active { background-color: #8b4513 !important; color: white; }
         .day-lesson { border: 2px solid #d32f2f !important; }
@@ -21,18 +21,14 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto">
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        <div class="grid grid-cols-2 gap-4 mb-8">
             <div class="wood-card p-6 text-center">
-                <div class="text-gray-500 text-sm">2025 總練習時數</div>
+                <div class="text-gray-500 text-sm">2025 總累積時數</div>
                 <div id="statTotalHours" class="text-3xl font-bold text-amber-900">0.0h</div>
             </div>
             <div class="wood-card p-6 text-center">
                 <div class="text-gray-500 text-sm">累積上課次數</div>
                 <div id="statTotalLessons" class="text-3xl font-bold text-red-700">0</div>
-            </div>
-            <div class="wood-card p-6 text-center col-span-2 md:col-span-1">
-                <div class="text-gray-500 text-sm">目前練習教材</div>
-                <div id="statActiveBooks" class="text-xl font-bold">0 本</div>
             </div>
         </div>
 
@@ -46,23 +42,23 @@
                 <div class="calendar-grid mb-2 text-center text-xs text-gray-400 font-bold">
                     <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
                 </div>
-                <div id="calendarBody" class="calendar-grid">
-                    </div>
+                <div id="calendarBody" class="calendar-grid"></div>
                 <div class="mt-4 flex gap-4 text-xs">
-                    <div class="flex items-center"><div class="w-3 h-3 bg-[#8b4513] mr-1 rounded"></div> 有練習</div>
+                    <div class="flex items-center"><div class="w-3 h-3 bg-[#8b4513] mr-1 rounded"></div> 有練琴</div>
                     <div class="flex items-center"><div class="w-3 h-3 border-2 border-[#d32f2f] mr-1 rounded"></div> 上課日</div>
                 </div>
             </div>
 
             <div class="wood-card p-6">
-                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book mr-2"></i>教材進度統計</h2>
-                <div class="mb-4">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
+                <div class="space-y-4 mb-6">
+                    <input type="text" id="newBookName" placeholder="教材名稱..." class="w-full border-b p-1 text-sm outline-none bg-transparent">
                     <div class="flex gap-2">
-                        <input type="text" id="newBookName" placeholder="新增教材名稱..." class="flex-1 border-b p-1 text-sm outline-none">
-                        <button onclick="addBook()" class="bg-stone-700 text-white px-3 py-1 rounded text-sm">新增</button>
+                        <input type="date" id="newBookStart" class="text-xs border rounded p-1 flex-1">
+                        <button onclick="addBook()" class="bg-stone-700 text-white px-4 py-1 rounded text-sm whitespace-nowrap">新增教材</button>
                     </div>
                 </div>
-                <ul id="bookList" class="space-y-4 max-h-[400px] overflow-y-auto">
+                <ul id="bookList" class="space-y-4">
                     </ul>
             </div>
         </div>
@@ -75,35 +71,33 @@
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">選擇練習教材</label>
-                    <select id="logBook" class="w-full border-b p-2 text-sm bg-transparent outline-none">
-                        </select>
+                    <label class="block text-xs text-gray-400 mb-1">今日練習時間 (分鐘)</label>
+                    <input type="number" id="logMinutes" value="60" class="w-full border-b p-2 text-xl font-bold outline-none">
+                </div>
+                <div class="flex items-center py-2">
+                    <input type="checkbox" id="logIsLesson" class="w-4 h-4 mr-2">
+                    <span class="text-sm">今日有上老師的課</span>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">練習時間 (分鐘)</label>
-                    <input type="number" id="logMinutes" value="60" class="w-full border-b p-2 outline-none">
+                    <label class="block text-xs text-gray-400 mb-1">備註 (選填，如：練了哪一首)</label>
+                    <input type="text" id="logNote" class="w-full border-b p-2 text-sm outline-none">
                 </div>
-                <div class="flex items-center">
-                    <input type="checkbox" id="logIsLesson" class="mr-2">
-                    <span class="text-sm">今日有上課</span>
-                </div>
-                <button onclick="saveEntry()" class="w-full bg-amber-900 text-white py-3 rounded-lg mt-4 shadow-lg">確認儲存</button>
-                <button id="deleteBtn" onclick="deleteEntry()" class="w-full text-red-500 text-xs mt-2 hidden">刪除此筆紀錄</button>
+                <button onclick="saveEntry()" class="w-full bg-amber-900 text-white py-3 rounded-lg mt-4 shadow-lg hover:bg-amber-800 transition">確認儲存</button>
+                <button id="deleteBtn" onclick="deleteEntry()" class="w-full text-red-500 text-xs mt-4 hidden">刪除此日紀錄</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 初始化數據
-        let db = JSON.parse(localStorage.getItem('celloAppDB')) || {
-            logs: {}, // 格式: "2025-01-01": { book: "Suzuki", mins: 60, isLesson: true }
-            books: ["Suzuki Vol.1", "空弦練習"]
+        // 數據結構更新：logs 只記時間，books 記日期
+        let db = JSON.parse(localStorage.getItem('celloPureLogDB')) || {
+            logs: {}, // "2025-01-01": { mins: 60, isLesson: true, note: "" }
+            books: [] // { name: "Suzuki 1", start: "2025-01-01", end: null }
         };
 
         let currentViewDate = new Date(2025, 0, 1);
         let selectedDateStr = "";
 
-        // 生成日曆
         function renderCalendar() {
             const year = currentViewDate.getFullYear();
             const month = currentViewDate.getMonth();
@@ -111,22 +105,17 @@
 
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
             const calendarBody = document.getElementById('calendarBody');
             calendarBody.innerHTML = '';
 
-            // 填充空格
-            for (let i = 0; i < firstDay; i++) {
-                calendarBody.innerHTML += '<div></div>';
-            }
+            for (let i = 0; i < firstDay; i++) calendarBody.innerHTML += '<div></div>';
 
-            // 填充日期
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const log = db.logs[dateStr];
                 
                 let classes = "day-cell";
-                if (log) classes += " day-active text-white";
+                if (log) classes += " day-active";
                 if (log && log.isLesson) classes += " day-lesson";
 
                 const dayEl = document.createElement('div');
@@ -138,89 +127,106 @@
             updateStats();
         }
 
-        // 月份切換
         function changeMonth(step) {
             currentViewDate.setMonth(currentViewDate.getMonth() + step);
             renderCalendar();
         }
 
-        // 教材統計
         function updateStats() {
-            const bookStats = {};
             let totalMins = 0;
             let lessonCount = 0;
-
-            db.books.forEach(b => bookStats[b] = 0);
             
-            Object.keys(db.logs).forEach(date => {
-                const entry = db.logs[date];
+            Object.values(db.logs).forEach(entry => {
                 totalMins += entry.mins;
                 if (entry.isLesson) lessonCount++;
-                if (bookStats[entry.book] !== undefined) {
-                    bookStats[entry.book] += entry.mins;
-                }
             });
 
             document.getElementById('statTotalHours').innerText = (totalMins / 60).toFixed(1) + 'h';
             document.getElementById('statTotalLessons').innerText = lessonCount;
-            document.getElementById('statActiveBooks').innerText = db.books.length + ' 本';
 
             const bookList = document.getElementById('bookList');
             bookList.innerHTML = '';
-            db.books.forEach(name => {
-                const h = (bookStats[name] / 60).toFixed(1);
+            db.books.forEach((book, index) => {
                 bookList.innerHTML += `
-                    <li class="flex justify-between items-center text-sm border-b border-dashed pb-2">
-                        <span class="font-medium text-amber-900">${name}</span>
-                        <span class="font-mono bg-stone-100 px-2 py-1 rounded">${h} 小時</span>
+                    <li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-amber-900">${book.name}</span>
+                            <button onclick="deleteBook(${index})" class="text-xs text-gray-400 hover:text-red-500">刪除</button>
+                        </div>
+                        <div class="text-[10px] text-gray-500 flex flex-col">
+                            <span>開始：${book.start || '未設定'}</span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span>結束：${book.end || '學習中...'}</span>
+                                ${!book.end ? `<button onclick="finishBook(${index})" class="text-[10px] bg-white border px-1 rounded">完成教材</button>` : ''}
+                            </div>
+                        </div>
                     </li>
                 `;
             });
-
-            // 更新彈窗選單
-            const logBookSelect = document.getElementById('logBook');
-            logBookSelect.innerHTML = db.books.map(b => `<option value="${b}">${b}</option>`).join('');
         }
 
-        // 開啟彈窗
+        // 教材功能
+        function addBook() {
+            const name = document.getElementById('newBookName').value.trim();
+            const start = document.getElementById('newBookStart').value;
+            if (name) {
+                db.books.push({ name, start, end: null });
+                document.getElementById('newBookName').value = '';
+                saveDB();
+                updateStats();
+            }
+        }
+
+        function finishBook(index) {
+            const today = new Date().toISOString().split('T')[0];
+            db.books[index].end = today;
+            saveDB();
+            updateStats();
+        }
+
+        function deleteBook(index) {
+            if (confirm("確定要刪除這本教材紀錄嗎？")) {
+                db.books.splice(index, 1);
+                saveDB();
+                updateStats();
+            }
+        }
+
+        // 打卡功能
         function openModal(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDate').innerText = dateStr;
             const log = db.logs[dateStr];
             
             if (log) {
-                document.getElementById('logBook').value = log.book;
                 document.getElementById('logMinutes').value = log.mins;
                 document.getElementById('logIsLesson').checked = log.isLesson;
+                document.getElementById('logNote').value = log.note || "";
                 document.getElementById('deleteBtn').classList.remove('hidden');
             } else {
                 document.getElementById('logMinutes').value = 60;
                 document.getElementById('logIsLesson').checked = false;
+                document.getElementById('logNote').value = "";
                 document.getElementById('deleteBtn').classList.add('hidden');
             }
-            
             document.getElementById('logModal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('logModal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('logModal').style.display = 'none'; }
 
-        // 儲存紀錄
         function saveEntry() {
             db.logs[selectedDateStr] = {
-                book: document.getElementById('logBook').value,
-                mins: parseInt(document.getElementById('logMinutes').value),
-                isLesson: document.getElementById('logIsLesson').checked
+                mins: parseInt(document.getElementById('logMinutes').value) || 0,
+                isLesson: document.getElementById('logIsLesson').checked,
+                note: document.getElementById('logNote').value
             };
             saveDB();
             closeModal();
             renderCalendar();
         }
 
-        // 刪除紀錄
         function deleteEntry() {
-            if (confirm("確定要刪除這天的紀錄嗎？")) {
+            if (confirm("刪除這天的練琴紀錄？")) {
                 delete db.logs[selectedDateStr];
                 saveDB();
                 closeModal();
@@ -228,22 +234,8 @@
             }
         }
 
-        // 新增教材
-        function addBook() {
-            const name = document.getElementById('newBookName').value.trim();
-            if (name && !db.books.includes(name)) {
-                db.books.push(name);
-                document.getElementById('newBookName').value = '';
-                saveDB();
-                updateStats();
-            }
-        }
+        function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
 
-        function saveDB() {
-            localStorage.setItem('celloAppDB', JSON.stringify(db));
-        }
-
-        // 啟動
         renderCalendar();
     </script>
 </body>
