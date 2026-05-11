@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大提琴紀錄 2025 - 圓點選色版</title>
+    <title>大提琴練習紀錄 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -13,12 +13,13 @@
         .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid #eee5d8; font-size: 0.8rem; background: white; position: relative; }
         .day-active { background-color: #e9e4bc !important; color: #6d664d !important; border-color: #dad4a2 !important; }
         .day-lesson { background-color: #a8ad8d !important; color: white !important; border-color: #8e9475 !important; }
-
-        /* 教材圓點 (日曆中顯示) */
+        
+        /* 教材標記圓點 */
         .book-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 2px; }
         
         .wood-card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(61,43,31,0.1); border: 1px solid #e0d5c1; }
-        
+        .stat-card { background: white; border-radius: 12px; padding: 15px; border: 1px solid #e0d5c1; text-align: center; }
+
         /* 浮動調色盤 */
         #paletteMenu { 
             display: none; position: absolute; background: white; border: 1px solid #e0d5c1; 
@@ -28,29 +29,38 @@
         .color-circle { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: transform 0.1s; border: 2px solid transparent; }
         .color-circle:hover { transform: scale(1.1); border-color: #ddd; }
 
-        .book-name-clickable { cursor: pointer; border-bottom: 1px dashed transparent; transition: 0.2s; }
-        .book-name-clickable:hover { border-bottom-color: currentColor; opacity: 0.8; }
+        .book-name-clickable { cursor: pointer; border-bottom: 1px dashed transparent; }
+        .book-name-clickable:hover { opacity: 0.8; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-5xl mx-auto pb-20">
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div class="stat-card">
+                <div class="text-xs text-stone-400 mb-1">2025 總累積時數</div>
+                <div class="text-2xl font-bold text-amber-900"><span id="totalHours">0.0</span>h</div>
+            </div>
+            <div class="stat-card">
+                <div class="text-xs text-stone-400 mb-1">累積上課次數</div>
+                <div class="text-2xl font-bold text-red-800"><span id="lessonCount">0</span></div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 wood-card p-6">
                 <div class="flex justify-between items-center mb-6">
                     <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-100 rounded"><i class="fa-solid fa-chevron-left"></i></button>
-                    <h2 id="calendarTitle" class="text-xl font-bold italic">2025年 12月</h2>
+                    <h2 id="calendarTitle" class="text-xl font-bold">2025年 1月</h2>
                     <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
                 <div id="calendarBody" class="calendar-grid"></div>
             </div>
 
             <div class="wood-card p-6">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
-                </div>
+                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
                 
                 <div class="space-y-3 mb-6 relative">
                     <div class="flex gap-2 items-center">
@@ -59,19 +69,15 @@
                             <i class="fa-solid fa-palette text-xl"></i>
                         </div>
                     </div>
-                    <div class="flex gap-2 items-center">
-                        <span class="text-xs text-gray-400">預設新增日期:</span>
-                        <input type="date" id="newBookStart" class="flex-1 text-xs border rounded p-1">
-                    </div>
-                    <button onclick="addBook()" class="w-full bg-stone-700 text-white py-2 rounded text-sm hover:bg-stone-600 transition font-bold">新增教材</button>
+                    <input type="date" id="newBookStart" class="w-full text-xs border rounded p-1">
+                    <button onclick="addBook()" class="w-full bg-stone-700 text-white py-2 rounded text-sm hover:bg-stone-600 font-bold">新增教材</button>
                     
                     <div id="paletteMenu"></div>
                 </div>
                 
                 <ul id="bookList" class="space-y-3"></ul>
-                
                 <div class="mt-4 text-center">
-                    <button id="toggleBookListBtn" onclick="toggleBookList()" class="text-[11px] text-stone-400 hover:text-stone-700 border px-3 py-1 rounded-full hidden">展開全部教材</button>
+                    <button id="toggleBtn" onclick="toggleExpand()" class="text-[11px] text-stone-400 border px-3 py-1 rounded-full hidden">展開全部教材</button>
                 </div>
             </div>
         </div>
@@ -79,22 +85,22 @@
 
     <div id="logModal" class="modal">
         <div class="wood-card p-8 w-80">
-            <h3 id="modalDate" class="text-lg font-bold mb-4 text-amber-900 border-b">2025-12-16</h3>
+            <h3 id="modalDate" class="text-lg font-bold mb-4 text-amber-900 border-b">日期</h3>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">選擇練習教材</label>
-                    <select id="modalBookSelect" class="w-full border p-2 rounded text-sm"></select>
+                    <label class="block text-xs text-gray-400 mb-1">教材</label>
+                    <select id="modalBook" class="w-full border p-2 rounded text-sm"></select>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">練習時間 (分鐘)</label>
-                    <input type="number" id="modalDuration" class="w-full border p-2 rounded text-sm" value="60">
+                    <label class="block text-xs text-gray-400 mb-1">時數 (分鐘)</label>
+                    <input type="number" id="modalMin" class="w-full border p-2 rounded text-sm" value="60">
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" id="modalIsLesson">
-                    <label for="modalIsLesson" class="text-sm">今日有上課</label>
+                    <input type="checkbox" id="modalLesson">
+                    <label for="modalLesson" class="text-sm">今日有上課</label>
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button onclick="saveLog()" class="flex-1 bg-stone-700 text-white py-2 rounded font-bold text-sm">確認儲存</button>
+                    <button onclick="saveLog()" class="flex-1 bg-stone-700 text-white py-2 rounded font-bold text-sm">儲存</button>
                     <button onclick="closeModal('logModal')" class="flex-1 border py-2 rounded text-sm">取消</button>
                 </div>
             </div>
@@ -104,110 +110,82 @@
     <div id="dateModal" class="modal">
         <div class="wood-card p-8 w-80">
             <h3 id="dateModalTitle" class="text-lg font-bold mb-4">設定日期</h3>
-            <input type="date" id="dateModalInput" class="w-full border p-2 mb-4 rounded">
+            <input type="date" id="dateInput" class="w-full border p-2 mb-4 rounded">
             <div class="flex gap-2">
-                <button onclick="confirmBookDate()" class="flex-1 bg-stone-700 text-white py-2 rounded font-bold">確定</button>
+                <button onclick="saveDateEdit()" class="flex-1 bg-stone-700 text-white py-2 rounded font-bold">確定</button>
                 <button onclick="closeModal('dateModal')" class="flex-1 border py-2 rounded">取消</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 9 種高辨識度圓點顏色
-        const morandiColors = [
-            '#a36361', '#b38e7d', '#e0c388', 
-            '#98a386', '#8eabb3', '#a199ad', 
-            '#b0a896', '#bac9b8', '#8a8a8a'
-        ];
+        const morandiColors = ['#a36361','#b38e7d','#e0c388','#98a386','#8eabb3','#a199ad','#b0a896','#bac9b8','#8a8a8a'];
+        let db = JSON.parse(localStorage.getItem('celloLog_v5')) || { logs: {}, books: [] };
+        let viewDate = new Date(2025, 0, 1), selectedColor = morandiColors[0], colorTarget = 'new';
+        let isExpanded = false, pendingIdx = null, pendingMode = "", currentDS = "";
 
-        let db = JSON.parse(localStorage.getItem('celloPureLogDB_v3')) || { logs: {}, books: [] };
-        let currentViewDate = new Date(2025, 11, 1);
-        let selectedColor = morandiColors[0];
-        let colorTarget = 'new';
-        let isExpanded = false;
-        let pendingDateIdx = null, pendingDateMode = "";
-        let selectedDayStr = "";
-
-        // 初始化調色盤
-        const palette = document.getElementById('paletteMenu');
+        // 調色盤生成
+        const pm = document.getElementById('paletteMenu');
         morandiColors.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'color-circle';
-            div.style.background = c;
-            div.onclick = () => {
-                if(colorTarget === 'new') {
-                    selectedColor = c;
-                    document.getElementById('newBookName').style.color = c;
-                } else {
-                    db.books[colorTarget].color = c;
-                    saveDB(); updateUI();
-                }
-                palette.style.display = 'none';
+            const d = document.createElement('div');
+            d.className = 'color-circle'; d.style.background = c;
+            d.onclick = () => {
+                if(colorTarget === 'new') { selectedColor = c; document.getElementById('newBookName').style.color = c; }
+                else { db.books[colorTarget].color = c; save(); refresh(); }
+                pm.style.display = 'none';
             };
-            palette.appendChild(div);
+            pm.appendChild(d);
         });
 
-        function togglePalette(e, target) {
-            e.stopPropagation();
-            colorTarget = target;
-            const rect = e.currentTarget.getBoundingClientRect();
-            palette.style.top = (window.scrollY + rect.bottom + 5) + 'px';
-            palette.style.left = (window.scrollX + rect.left - 80) + 'px';
-            palette.style.display = palette.style.display === 'grid' ? 'none' : 'grid';
+        function togglePalette(e, t) {
+            e.stopPropagation(); colorTarget = t;
+            const r = e.currentTarget.getBoundingClientRect();
+            pm.style.top = (window.scrollY + r.bottom + 5)+'px'; pm.style.left = (window.scrollX + r.left - 80)+'px';
+            pm.style.display = pm.style.display === 'grid' ? 'none' : 'grid';
         }
 
-        document.addEventListener('click', () => palette.style.display = 'none');
+        function refresh() {
+            const list = document.getElementById('bookList'), sel = document.getElementById('modalBook');
+            list.innerHTML = ''; sel.innerHTML = '';
+            
+            // 統計
+            let mins = 0, lessons = 0;
+            Object.values(db.logs).forEach(l => { mins += l.duration; if(l.isLesson) lessons++; });
+            document.getElementById('totalHours').innerText = (mins/60).toFixed(1);
+            document.getElementById('lessonCount').innerText = lessons;
 
-        function updateUI() {
-            const list = document.getElementById('bookList');
-            const toggleBtn = document.getElementById('toggleBookListBtn');
-            const select = document.getElementById('modalBookSelect');
-            list.innerHTML = ''; select.innerHTML = '';
-
-            if (db.books.length > 3) {
-                toggleBtn.classList.remove('hidden');
-                toggleBtn.innerText = isExpanded ? "收起教材列表" : "展開全部教材";
-            } else { toggleBtn.classList.add('hidden'); isExpanded = true; }
-
+            if(db.books.length > 3) document.getElementById('toggleBtn').classList.remove('hidden');
+            
             db.books.forEach((b, i) => {
-                // 更新清單
                 const li = document.createElement('li');
-                li.className = `p-3 bg-stone-50 rounded-lg border border-stone-200 ${(!isExpanded && i >= 3) ? 'hidden' : ''}`;
+                li.className = `p-3 bg-stone-50 rounded-lg border border-stone-200 ${(!isExpanded && i>=3)?'hidden':''}`;
                 li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <span class="book-name-clickable text-[14px] font-bold" style="color:${b.color}" onclick="togglePalette(event, ${i})">${b.name}</span>
-                        <button onclick="deleteBook(${i})" class="text-[10px] text-gray-300 hover:text-red-400">刪除</button>
+                        <button onclick="delBook(${i})" class="text-[10px] text-gray-300">刪除</button>
                     </div>
                     <div class="text-[11px] text-gray-500 flex justify-between">
-                        <span>開始: ${b.start || '--'} <button onclick="openDateEdit(${i},'start')" class="underline opacity-50 ml-1">修改</button></span>
-                        <span>結束: ${b.end || '學習中'} <button onclick="openDateEdit(${i},'end')" class="underline font-bold ml-1">${b.end?'修改':'設定完練'}</button></span>
-                    </div>
-                `;
+                        <span>開始: ${b.start||'--'} <button onclick="editD(${i},'start')" class="underline opacity-40 ml-1">修改</button></span>
+                        <span>結束: ${b.end||'學習中'} <button onclick="editD(${i},'end')" class="underline font-bold ml-1">${b.end?'修改':'設定完練'}</button></span>
+                    </div>`;
                 list.appendChild(li);
-
-                // 更新彈窗下拉選單
-                const opt = document.createElement('option');
-                opt.value = b.name; opt.innerText = b.name;
-                select.appendChild(opt);
+                sel.innerHTML += `<option value="${b.name}">${b.name}</option>`;
             });
-            renderCalendar();
+            renderCal();
         }
 
-        function renderCalendar() {
-            const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
+        function renderCal() {
+            const y = viewDate.getFullYear(), m = viewDate.getMonth();
             document.getElementById('calendarTitle').innerText = `${y}年 ${m+1}月`;
             const first = new Date(y, m, 1).getDay(), last = new Date(y, m+1, 0).getDate();
-            const body = document.getElementById('calendarBody');
-            body.innerHTML = '';
-
+            const body = document.getElementById('calendarBody'); body.innerHTML = '';
             for(let i=0; i<first; i++) body.innerHTML += '<div></div>';
             for(let d=1; d<=last; d++) {
                 const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const log = db.logs[ds];
                 const cell = document.createElement('div');
-                cell.className = `day-cell ${log ? (log.isLesson?'day-lesson':'day-active') : ''}`;
-                cell.onclick = () => openLogModal(ds);
-                
+                cell.className = `day-cell ${log ? (log.isLesson?'day-lesson':'day-active'):''}`;
+                cell.onclick = () => { currentDS = ds; document.getElementById('modalDate').innerText = ds; document.getElementById('logModal').style.display='flex'; };
                 let dot = "";
                 if(log && log.bookName) {
                     const b = db.books.find(x => x.name === log.bookName);
@@ -218,51 +196,33 @@
             }
         }
 
-        function openLogModal(ds) {
-            selectedDayStr = ds;
-            document.getElementById('modalDate').innerText = ds;
-            const log = db.logs[ds] || { bookName: db.books[0]?.name || '', duration: 60, isLesson: false };
-            document.getElementById('modalBookSelect').value = log.bookName;
-            document.getElementById('modalDuration').value = log.duration;
-            document.getElementById('modalIsLesson').checked = log.isLesson;
-            document.getElementById('logModal').style.display = 'flex';
-        }
-
         function saveLog() {
-            db.logs[selectedDayStr] = {
-                bookName: document.getElementById('modalBookSelect').value,
-                duration: parseInt(document.getElementById('modalDuration').value),
-                isLesson: document.getElementById('modalIsLesson').checked
-            };
-            saveDB(); updateUI(); closeModal('logModal');
+            db.logs[currentDS] = { bookName: document.getElementById('modalBook').value, duration: parseInt(document.getElementById('modalMin').value), isLesson: document.getElementById('modalLesson').checked };
+            save(); refresh(); closeModal('logModal');
         }
 
         function addBook() {
-            const n = document.getElementById('newBookName').value;
-            const s = document.getElementById('newBookStart').value;
-            if(!n) return;
-            db.books.unshift({ name: n, start: s, end: null, color: selectedColor });
-            saveDB(); updateUI();
-            document.getElementById('newBookName').value = '';
+            const n = document.getElementById('newBookName').value, s = document.getElementById('newBookStart').value;
+            if(!n) return; db.books.unshift({ name: n, start: s, end: null, color: selectedColor });
+            save(); refresh(); document.getElementById('newBookName').value = '';
         }
 
-        function openDateEdit(i, mode) { pendingDateIdx = i; pendingDateMode = mode; document.getElementById('dateModal').style.display = 'flex'; }
-        function confirmBookDate() {
-            const val = document.getElementById('dateModalInput').value;
-            if(pendingDateMode === 'start') db.books[pendingDateIdx].start = val;
-            else db.books[pendingDateIdx].end = val;
-            saveDB(); updateUI(); closeModal('dateModal');
+        function editD(i, m) { pendingIdx = i; pendingMode = m; document.getElementById('dateModal').style.display='flex'; }
+        function saveDateEdit() {
+            const v = document.getElementById('dateInput').value;
+            if(pendingMode === 'start') db.books[pendingIdx].start = v; else db.books[pendingIdx].end = v;
+            save(); refresh(); closeModal('dateModal');
         }
 
-        function deleteBook(i) { if(confirm("確定刪除此教材紀錄？")) { db.books.splice(i,1); saveDB(); updateUI(); } }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleBookList() { isExpanded = !isExpanded; updateUI(); }
-        function changeMonth(v) { currentViewDate.setMonth(currentViewDate.getMonth() + v); renderCalendar(); }
-        function saveDB() { localStorage.setItem('celloPureLogDB_v3', JSON.stringify(db)); }
-
-        // 初始化日期與介面
+        function delBook(i) { if(confirm("刪除教材？")) { db.books.splice(i,1); save(); refresh(); } }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        function toggleExpand() { isExpanded = !isExpanded; refresh(); }
+        function changeMonth(v) { viewDate.setMonth(viewDate.getMonth()+v); renderCal(); }
+        function save() { localStorage.setItem('celloLog_v5', JSON.stringify(db)); }
+        
+        document.addEventListener('click', () => pm.style.display = 'none');
         document.getElementById('newBookStart').value = new Date().toISOString().split('T')[0];
-        updateUI();
+        refresh();
     </script>
 </body>
 </html>
