@@ -51,7 +51,7 @@
                     <input type="text" id="newBookName" placeholder="教材名稱..." class="w-full border-b p-1 text-sm outline-none bg-transparent">
                     <div class="flex flex-col gap-2">
                         <label class="text-[10px] text-gray-400">開始日期</label>
-                        <input type="date" id="newBookStart" class="text-xs border rounded p-1">
+                        <input type="date" id="newBookStart" class="text-xs border rounded p-1" onchange="updateDefaultDates(this.value)">
                         <button onclick="addBook()" class="bg-stone-700 text-white px-4 py-2 rounded text-sm mt-1 hover:bg-stone-600 transition font-bold">新增教材</button>
                     </div>
                 </div>
@@ -106,22 +106,35 @@
 
     <script>
         const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('newBookStart').value = todayStr; // 預設新增日期為今天
+        document.getElementById('newBookStart').value = todayStr;
 
-        const defaultBooks = [
-            { name: "Essential Elements Book 1", start: "2025-01-01", end: null },
-            { name: "Strictly Strings Book 1", start: "2025-01-01", end: null },
-            { name: "Suzuki Vol.1", start: "2025-01-01", end: null }
-        ];
+        // 建立預設教材清單的函式，會根據傳入的日期來設定
+        function getInitialBooks(startDate) {
+            return [
+                { name: "Essential Elements Book 1", start: startDate, end: null },
+                { name: "Strictly Strings Book 1", start: startDate, end: null },
+                { name: "Suzuki Vol.1", start: startDate, end: null }
+            ];
+        }
 
         let db = JSON.parse(localStorage.getItem('celloPureLogDB'));
         if (!db || (db.logs && Object.keys(db.logs).length === 0 && db.books.length === 0)) {
-            db = { logs: {}, books: defaultBooks };
+            db = { logs: {}, books: getInitialBooks(todayStr) };
         }
 
         let currentViewDate = new Date(2025, 0, 1);
         let selectedDateStr = "";
         let pendingBookIndex = null;
+
+        // 當日期選擇器變動時，如果是乾淨狀態，同步更新預設教材的日期
+        function updateDefaultDates(newDate) {
+            if (Object.keys(db.logs).length === 0 && db.books.length <= 3) {
+                db.books.forEach(book => {
+                    if (!book.end) book.start = newDate;
+                });
+                updateStats();
+            }
+        }
 
         function renderCalendar() {
             const year = currentViewDate.getFullYear(), month = currentViewDate.getMonth();
@@ -167,7 +180,8 @@
         function resetAllData() {
             if (confirm("⚠️ 注意：這將會永久刪除所有紀錄！")) {
                 if (confirm("您真的確定要清空嗎？清空後將恢復預設教材。")) {
-                    db = { logs: {}, books: defaultBooks };
+                    const selectedDate = document.getElementById('newBookStart').value;
+                    db = { logs: {}, books: getInitialBooks(selectedDate) };
                     saveDB();
                     renderCalendar();
                 }
@@ -182,6 +196,7 @@
             linkElement.setAttribute('download', 'cello_practice_backup.json');
             linkElement.click();
         }
+
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -194,12 +209,14 @@
             };
             reader.readAsText(file);
         }
+
         function showBookModal(i) { pendingBookIndex = i; document.getElementById('bookEndModal').style.display = 'flex'; }
         function closeBookModal() { document.getElementById('bookEndModal').style.display = 'none'; }
         function confirmFinishBook() {
             const date = document.getElementById('finishDateInput').value;
             if (date) { db.books[pendingBookIndex].end = date; saveDB(); updateStats(); closeBookModal(); }
         }
+
         function addBook() {
             const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
             if (name) { 
@@ -207,9 +224,9 @@
                 saveDB(); 
                 updateStats(); 
                 document.getElementById('newBookName').value = ''; 
-                document.getElementById('newBookStart').value = todayStr;
             }
         }
+
         function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
         function openModal(d) {
             selectedDateStr = d; document.getElementById('modalDate').innerText = d;
