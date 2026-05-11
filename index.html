@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的大提琴紀錄 2025</title>
+    <title>大提琴紀錄 2025 - 精緻選色版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -11,44 +11,32 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Serif TC', serif; background-color: #fdfaf5; color: #4a3728; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        
         .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid #eee5d8; font-size: 0.8rem; background: white; position: relative; }
-        .day-cell:hover { background-color: #fcf8f0; }
-        
-        /* 練習日 (淺黃米色) */
         .day-active { background-color: #e9e4bc !important; color: #6d664d !important; border-color: #dad4a2 !important; }
-        
-        /* 上課日 (墨綠色) */
         .day-lesson { background-color: #a8ad8d !important; color: white !important; border-color: #8e9475 !important; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
         .wood-card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(61,43,31,0.1); border: 1px solid #e0d5c1; }
         
-        /* 教材顏色小點 */
+        /* 教材圓點 (行事曆用) */
         .book-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 2px; }
         
-        /* 調色盤與選單 */
-        .palette-trigger { cursor: pointer; color: #a89a8e; transition: 0.2s; }
-        .palette-trigger:hover { color: #4a3728; }
-        #colorMenu { display: none; position: absolute; right: 0; top: 30px; background: white; border: 1px solid #e0d5c1; padding: 8px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; gap: 8px; }
-        .color-picker-item { width: 18px; height: 18px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); }
-        .color-picker-item:hover { transform: scale(1.1); }
+        /* 調色盤選單樣式 */
+        #paletteMenu { 
+            display: none; position: absolute; background: white; border: 1px solid #e0d5c1; 
+            padding: 12px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+            z-index: 100; grid-template-columns: repeat(3, 1fr); gap: 10px;
+        }
+        .color-circle { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; transition: transform 0.1s; border: 2px solid transparent; }
+        .color-circle:hover { transform: scale(1.1); border-color: #ddd; }
+
+        .book-name-clickable { cursor: pointer; border-bottom: 1px dashed transparent; transition: 0.2s; }
+        .book-name-clickable:hover { border-bottom-color: currentColor; opacity: 0.8; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto pb-20">
-        <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="wood-card p-6 text-center">
-                <div class="text-gray-500 text-sm">2025 總累積時數</div>
-                <div id="statTotalHours" class="text-3xl font-bold text-amber-900">0.0h</div>
-            </div>
-            <div class="wood-card p-6 text-center">
-                <div class="text-gray-500 text-sm">累積上課次數</div>
-                <div id="statTotalLessons" class="text-3xl font-bold text-amber-900">0</div>
-            </div>
-        </div>
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 wood-card p-6">
                 <div class="flex justify-between items-center mb-6">
@@ -56,71 +44,31 @@
                     <h2 id="calendarTitle" class="text-xl font-bold">2025年 1月</h2>
                     <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-100 rounded"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
-                <div class="calendar-grid mb-2 text-center text-xs text-gray-400 font-bold">
-                    <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-                </div>
                 <div id="calendarBody" class="calendar-grid"></div>
-                
-                <div class="mt-4 flex gap-4 text-[10px] text-gray-400 justify-center">
-                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-[#e9e4bc] mr-1"></span> 練習</div>
-                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-[#a8ad8d] mr-1"></span> 上課日</div>
-                </div>
             </div>
 
             <div class="wood-card p-6">
                 <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
-                <div class="space-y-3 mb-6">
-                    <div class="relative flex gap-2 items-center">
+                
+                <div class="space-y-3 mb-6 relative">
+                    <div class="flex gap-2 items-center">
                         <input type="text" id="newBookName" placeholder="教材名稱..." class="flex-1 border-b p-1 text-sm outline-none bg-transparent">
-                        <div class="palette-trigger" onclick="toggleColorMenu()"><i class="fa-solid fa-palette text-lg"></i></div>
-                        <div id="colorMenu" class="flex">
-                            <div class="color-picker-item" style="background: #6d828a;" data-color="#6d828a"></div>
-                            <div class="color-picker-item" style="background: #a38b85;" data-color="#a38b85"></div>
-                            <div class="color-picker-item" style="background: #879681;" data-color="#879681"></div>
-                            <div class="color-picker-item" style="background: #948c75;" data-color="#948c75"></div>
-                            <div class="color-picker-item" style="background: #8a8196;" data-color="#8a8196"></div>
+                        <div class="cursor-pointer text-stone-400 hover:text-stone-700" onclick="togglePalette(event, 'new')">
+                            <i class="fa-solid fa-palette text-xl"></i>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-2">
-                        <label class="text-[10px] text-gray-400">預設新增日期</label>
-                        <input type="date" id="newBookStart" class="text-xs border rounded p-1">
-                        <button onclick="addBook()" class="bg-stone-700 text-white px-4 py-2 rounded text-sm mt-1 hover:bg-stone-600 transition font-bold">新增教材</button>
-                    </div>
+                    <input type="date" id="newBookStart" class="w-full text-xs border rounded p-1">
+                    <button onclick="addBook()" class="w-full bg-stone-700 text-white py-2 rounded text-sm hover:bg-stone-600 transition font-bold">新增教材</button>
+                    
+                    <div id="paletteMenu">
+                        </div>
                 </div>
                 
                 <ul id="bookList" class="space-y-3"></ul>
                 
                 <div class="mt-4 text-center">
-                    <button id="toggleBookListBtn" onclick="toggleBookList()" class="text-[11px] text-stone-500 hover:text-stone-800 transition hidden border px-3 py-1 rounded-full">展開全部教材</button>
+                    <button id="toggleBookListBtn" onclick="toggleBookList()" class="text-[11px] text-stone-500 hover:text-stone-800 hidden border px-3 py-1 rounded-full">展開全部教材</button>
                 </div>
-            </div>
-        </div>
-
-        <div class="mt-8">
-            <button onclick="exportData()" class="border border-amber-900 text-amber-900 px-4 py-2 rounded-lg text-sm hover:bg-amber-50 transition font-bold">匯出備份</button>
-            <button onclick="document.getElementById('importFile').click()" class="ml-2 border border-gray-400 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition font-bold">匯入備份</button>
-            <input type="file" id="importFile" class="hidden" onchange="importData(event)">
-        </div>
-    </div>
-
-    <div id="logModal" class="modal">
-        <div class="wood-card p-8 w-80 relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400"><i class="fa-solid fa-xmark"></i></button>
-            <h3 id="modalDate" class="text-lg font-bold mb-4 text-amber-900 underline">日期</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">練習教材</label>
-                    <select id="logBookSelect" class="w-full border-b p-2 text-sm outline-none bg-transparent">
-                        <option value="">未選擇教材</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">練習分鐘</label>
-                    <input type="number" id="logMinutes" value="60" class="w-full border-b p-2 text-xl font-bold outline-none">
-                </div>
-                <div class="flex items-center"><input type="checkbox" id="logIsLesson" class="mr-2"> <span class="text-sm">今日有上課</span></div>
-                <button onclick="saveEntry()" class="w-full bg-amber-900 text-white py-3 rounded-lg shadow-lg font-bold">儲存</button>
-                <button id="deleteBtn" onclick="deleteEntry()" class="w-full text-red-500 text-xs mt-2 hidden">刪除紀錄</button>
             </div>
         </div>
     </div>
@@ -137,53 +85,59 @@
     </div>
 
     <script>
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('newBookStart').value = todayStr;
+        // 定義高辨識度的 9 個顏色 (參考圖二)
+        const morandiColors = [
+            '#a36361', '#b38e7d', '#e0c388', 
+            '#98a386', '#8eabb3', '#a199ad', 
+            '#b0a896', '#bac9b8', '#8a8a8a'
+        ];
 
         let db = JSON.parse(localStorage.getItem('celloPureLogDB')) || { logs: {}, books: [] };
         let currentViewDate = new Date(2025, 0, 1);
-        let selectedDateStr = "";
-        let selectedColor = "#6d828a"; // 預設色
+        let selectedColor = morandiColors[0];
         let isBookListExpanded = false;
         let pendingBookIndex = null;
         let dateMode = "";
+        let colorTarget = 'new'; // 'new' 或 教材索引
 
-        // 調色盤功能
-        function toggleColorMenu() {
-            const menu = document.getElementById('colorMenu');
-            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        // 初始化調色盤內容
+        const paletteMenu = document.getElementById('paletteMenu');
+        morandiColors.forEach(color => {
+            const div = document.createElement('div');
+            div.className = 'color-circle';
+            div.style.background = color;
+            div.onclick = () => selectColor(color);
+            paletteMenu.appendChild(div);
+        });
+
+        function togglePalette(event, target) {
+            event.stopPropagation();
+            colorTarget = target;
+            const rect = event.currentTarget.getBoundingClientRect();
+            paletteMenu.style.top = (window.scrollY + rect.bottom + 5) + 'px';
+            paletteMenu.style.left = (window.scrollX + rect.left - 80) + 'px';
+            paletteMenu.style.display = paletteMenu.style.display === 'grid' ? 'none' : 'grid';
         }
 
-        document.querySelectorAll('.color-picker-item').forEach(item => {
-            item.onclick = () => {
-                selectedColor = item.dataset.color;
-                document.getElementById('newBookName').style.color = selectedColor;
-                document.getElementById('colorMenu').style.display = 'none';
-            };
-        });
+        function selectColor(color) {
+            if (colorTarget === 'new') {
+                selectedColor = color;
+                document.getElementById('newBookName').style.color = color;
+            } else {
+                db.books[colorTarget].color = color;
+                saveDB();
+                updateStats();
+            }
+            paletteMenu.style.display = 'none';
+        }
 
-        const bookListEl = document.getElementById('bookList');
-        Sortable.create(bookListEl, {
-            animation: 150,
-            onEnd: function (evt) {
-                const item = db.books.splice(evt.oldIndex, 1)[0];
-                db.books.splice(evt.newIndex, 0, item);
-                saveDB(); updateStats();
-            },
-        });
+        // 點擊外面關閉調色盤
+        document.addEventListener('click', () => { paletteMenu.style.display = 'none'; });
 
         function updateStats() {
-            let mins = 0, lessons = 0;
-            Object.values(db.logs).forEach(e => { mins += e.mins; if (e.isLesson) lessons++; });
-            document.getElementById('statTotalHours').innerText = (mins / 60).toFixed(1) + 'h';
-            document.getElementById('statTotalLessons').innerText = lessons;
-
             const list = document.getElementById('bookList');
-            const select = document.getElementById('logBookSelect');
             const toggleBtn = document.getElementById('toggleBookListBtn');
-            
             list.innerHTML = '';
-            select.innerHTML = '<option value="">未選擇教材</option>';
 
             if (db.books.length > 3) {
                 toggleBtn.classList.remove('hidden');
@@ -195,22 +149,31 @@
                 li.className = `book-item p-3 bg-stone-50 rounded-lg border border-stone-200 ${(!isBookListExpanded && i >= 3) ? 'hidden' : ''}`;
                 li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold leading-tight" style="color: ${b.color || '#4a3728'}">${b.name}</span>
+                        <span class="book-name-clickable text-[14px] font-bold" 
+                              style="color: ${b.color}" 
+                              onclick="togglePalette(event, ${i})">${b.name}</span>
                         <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400">刪除</button>
                     </div>
-                    <div class="text-[11px] text-gray-500">
-                        開始：${b.start || '無'} <button onclick="openDateModal(${i}, 'start')" class="ml-1 underline italic">修改</button><br>
+                    <div class="text-[11px] text-gray-500 leading-relaxed">
+                        開始：${b.start || '---'} <button onclick="openDateModal(${i}, 'start')" class="ml-1 underline italic opacity-60">修改</button><br>
                         結束：${b.end || '學習中'} 
-                        ${!b.end ? `<button onclick="openDateModal(${i}, 'end')" class="ml-1 underline font-bold text-stone-700">設定完練</button>` : `<button onclick="openDateModal(${i}, 'end')" class="ml-1 underline italic">修改</button>`}
+                        <button onclick="openDateModal(${i}, 'end')" class="ml-1 underline font-bold text-stone-600">${b.end ? '修改' : '設定完練'}</button>
                     </div>
                 `;
                 list.appendChild(li);
-
-                const opt = document.createElement('option');
-                opt.value = b.name;
-                opt.innerText = b.name;
-                select.appendChild(opt);
             });
+            renderCalendar();
+        }
+
+        function addBook() {
+            const name = document.getElementById('newBookName').value;
+            const start = document.getElementById('newBookStart').value;
+            if (name) { 
+                db.books.unshift({ name, start, end: null, color: selectedColor }); 
+                saveDB(); 
+                document.getElementById('newBookName').value = '';
+                updateStats(); 
+            }
         }
 
         function renderCalendar() {
@@ -224,94 +187,33 @@
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const log = db.logs[dateStr];
                 const dayEl = document.createElement('div');
-                
-                let activeClass = log ? (log.isLesson ? "day-lesson" : "day-active") : "";
-                dayEl.className = `day-cell ${activeClass}`;
+                dayEl.className = `day-cell ${log ? (log.isLesson ? "day-lesson" : "day-active") : ""}`;
                 
                 let dotHtml = "";
                 if (log && log.bookName) {
                     const book = db.books.find(b => b.name === log.bookName);
                     if (book) dotHtml = `<div class="book-dot" style="background: ${book.color}"></div>`;
                 }
-
-                dayEl.innerHTML = `<span>${d}</span>${dotHtml}${log ? `<span class="text-[8px] opacity-70">${log.mins}m</span>` : ''}`;
-                dayEl.onclick = () => openModal(dateStr);
+                dayEl.innerHTML = `<span>${d}</span>${dotHtml}`;
                 body.appendChild(dayEl);
             }
-            updateStats();
         }
 
-        function openDateModal(i, mode) {
-            pendingBookIndex = i; dateMode = mode;
-            document.getElementById('dateModalTitle').innerText = mode === 'start' ? "設定開始日期" : "設定完練日期";
-            document.getElementById('dateModalInput').value = mode === 'start' ? (db.books[i].start || todayStr) : (db.books[i].end || todayStr);
-            document.getElementById('bookDateModal').style.display = 'flex';
-        }
+        // 其他基礎邏輯
+        function openDateModal(i, mode) { pendingBookIndex = i; dateMode = mode; document.getElementById('bookDateModal').style.display = 'flex'; }
         function closeBookDateModal() { document.getElementById('bookDateModal').style.display = 'none'; }
         function confirmBookDate() {
             const date = document.getElementById('dateModalInput').value;
-            if (date) {
-                if (dateMode === 'start') db.books[pendingBookIndex].start = date;
-                else db.books[pendingBookIndex].end = date;
-                saveDB(); updateStats(); closeBookDateModal();
-            }
+            if (dateMode === 'start') db.books[pendingBookIndex].start = date;
+            else db.books[pendingBookIndex].end = date;
+            saveDB(); updateStats(); closeBookDateModal();
         }
-
-        function addBook() {
-            const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
-            if (name) { 
-                db.books.unshift({ name, start, end: null, color: selectedColor }); 
-                saveDB(); updateStats(); 
-                document.getElementById('newBookName').value = '';
-                document.getElementById('newBookName').style.color = '#4a3728';
-            }
-        }
-
-        function openModal(d) {
-            selectedDateStr = d; document.getElementById('modalDate').innerText = d;
-            const log = db.logs[d];
-            document.getElementById('logMinutes').value = log ? log.mins : 60;
-            document.getElementById('logIsLesson').checked = log ? log.isLesson : false;
-            document.getElementById('logBookSelect').value = (log && log.bookName) ? log.bookName : "";
-            document.getElementById('deleteBtn').classList.toggle('hidden', !log);
-            document.getElementById('logModal').style.display = 'flex';
-        }
-
-        function saveEntry() {
-            db.logs[selectedDateStr] = { 
-                mins: parseInt(document.getElementById('logMinutes').value) || 0, 
-                isLesson: document.getElementById('logIsLesson').checked,
-                bookName: document.getElementById('logBookSelect').value
-            };
-            saveDB(); closeModal(); renderCalendar();
-        }
-
-        function toggleBookList() { isBookListExpanded = !isBookListExpanded; updateStats(); }
-        function closeModal() { document.getElementById('logModal').style.display = 'none'; }
-        function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
         function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
-        function deleteEntry() { delete db.logs[selectedDateStr]; saveDB(); closeModal(); renderCalendar(); }
+        function toggleBookList() { isBookListExpanded = !isBookListExpanded; updateStats(); }
+        function deleteBook(i) { if(confirm("確定刪除此教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
         function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
-        
-        function exportData() {
-            const dataStr = JSON.stringify(db);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', 'cello_practice_backup.json');
-            linkElement.click();
-        }
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try { db = JSON.parse(e.target.result); saveDB(); renderCalendar(); } catch (err) { alert("格式錯誤"); }
-            };
-            reader.readAsText(file);
-        }
 
-        renderCalendar();
+        updateStats();
     </script>
 </body>
 </html>
