@@ -59,16 +59,22 @@
             </div>
         </div>
 
-        <div class="mt-8 grid grid-cols-2 gap-4">
-            <button onclick="exportData()" class="border border-amber-900 text-amber-900 py-2 rounded-lg text-sm hover:bg-amber-50 transition">
-                <i class="fa-solid fa-download mr-1"></i> 匯出備份 (同步到手機)
-            </button>
-            <div class="relative">
-                <input type="file" id="importFile" class="hidden" onchange="importData(event)">
-                <button onclick="document.getElementById('importFile').click()" class="w-full border border-gray-400 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50 transition">
-                    <i class="fa-solid fa-upload mr-1"></i> 匯入備份 (接收電腦資料)
+        <div class="mt-8 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="exportData()" class="border border-amber-900 text-amber-900 py-2 rounded-lg text-sm hover:bg-amber-50 transition">
+                    <i class="fa-solid fa-download mr-1"></i> 匯出備份 (同步用)
                 </button>
+                <div class="relative">
+                    <input type="file" id="importFile" class="hidden" onchange="importData(event)">
+                    <button onclick="document.getElementById('importFile').click()" class="w-full border border-gray-400 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50 transition">
+                        <i class="fa-solid fa-upload mr-1"></i> 匯入備份
+                    </button>
+                </div>
             </div>
+            
+            <button onclick="resetAllData()" class="w-full border border-red-200 text-red-400 py-2 rounded-lg text-xs hover:bg-red-50 transition">
+                <i class="fa-solid fa-trash-can mr-1"></i> 重製所有紀錄 (清空所有資料)
+            </button>
         </div>
     </div>
 
@@ -132,25 +138,37 @@
             const list = document.getElementById('bookList');
             list.innerHTML = '';
             db.books.forEach((b, i) => {
-                list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200 shadow-sm">
-                    <div class="flex justify-between font-bold text-amber-900"><span>${b.name}</span><button onclick="deleteBook(${i})" class="text-xs text-gray-400 hover:text-red-500">刪除</button></div>
+                list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
+                    <div class="flex justify-between font-bold text-amber-900"><span>${b.name}</span><button onclick="deleteBook(${i})" class="text-xs text-gray-400">刪除</button></div>
                     <div class="text-[10px] text-gray-500 mt-1">開始：${b.start || '無'}<br>結束：${b.end || '學習中'}
-                    ${!b.end ? `<button onclick="showBookModal(${i})" class="ml-2 text-stone-600 underline font-bold">設定完練</button>` : ''}</div>
+                    ${!b.end ? `<button onclick="showBookModal(${i})" class="ml-2 text-stone-600 underline">設定完練</button>` : ''}</div>
                 </li>`;
             });
         }
 
-        // 同步功能邏輯
+        // 重製功能
+        function resetAllData() {
+            const firstConfirm = confirm("⚠️ 注意：這將會永久刪除所有練琴時數和教材紀錄！");
+            if (firstConfirm) {
+                const secondConfirm = confirm("您真的確定要清空嗎？此動作無法復原。建議您清空前先進行『匯出備份』。");
+                if (secondConfirm) {
+                    db = { logs: {}, books: [] };
+                    saveDB();
+                    renderCalendar();
+                    alert("紀錄已全數清空。");
+                }
+            }
+        }
+
+        // 基本與同步功能
         function exportData() {
             const dataStr = JSON.stringify(db);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const exportFileDefaultName = 'cello_practice_backup.json';
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.setAttribute('download', 'cello_practice_backup.json');
             linkElement.click();
         }
-
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -158,19 +176,11 @@
             reader.onload = function(e) {
                 try {
                     const importedDB = JSON.parse(e.target.result);
-                    if (confirm("匯入將覆蓋目前這台裝置的紀錄，確定嗎？")) {
-                        db = importedDB;
-                        saveDB();
-                        renderCalendar();
-                    }
-                } catch (err) {
-                    alert("檔案格式不正確！");
-                }
+                    if (confirm("匯入將覆蓋目前這台裝置的紀錄，確定嗎？")) { db = importedDB; saveDB(); renderCalendar(); }
+                } catch (err) { alert("檔案格式不正確！"); }
             };
             reader.readAsText(file);
         }
-
-        // 基本功能邏輯 (教材與打卡)
         function showBookModal(i) { pendingBookIndex = i; document.getElementById('bookEndModal').style.display = 'flex'; }
         function closeBookModal() { document.getElementById('bookEndModal').style.display = 'none'; }
         function confirmFinishBook() {
