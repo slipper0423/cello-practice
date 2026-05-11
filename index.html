@@ -204,4 +204,30 @@
             const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
             if (name) { 
                 db.books.push({ name, start, end: null }); 
-                saveDB
+                saveDB(); 
+                updateStats(); 
+                document.getElementById('newBookName').value = ''; 
+                document.getElementById('newBookStart').value = todayStr;
+            }
+        }
+        function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
+        function openModal(d) {
+            selectedDateStr = d; document.getElementById('modalDate').innerText = d;
+            const log = db.logs[d];
+            document.getElementById('logMinutes').value = log ? log.mins : 60;
+            document.getElementById('logIsLesson').checked = log ? log.isLesson : false;
+            document.getElementById('deleteBtn').classList.toggle('hidden', !log);
+            document.getElementById('logModal').style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('logModal').style.display = 'none'; }
+        function saveEntry() {
+            db.logs[selectedDateStr] = { mins: parseInt(document.getElementById('logMinutes').value) || 0, isLesson: document.getElementById('logIsLesson').checked };
+            saveDB(); closeModal(); renderCalendar();
+        }
+        function deleteEntry() { delete db.logs[selectedDateStr]; saveDB(); closeModal(); renderCalendar(); }
+        function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
+        function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
+        renderCalendar();
+    </script>
+</body>
+</html>
