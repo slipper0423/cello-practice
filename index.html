@@ -6,6 +6,7 @@
     <title>我的大提琴紀錄 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Serif TC', serif; background-color: #fdfaf5; color: #4a3728; }
@@ -16,6 +17,11 @@
         .day-lesson { border: 2px solid #d32f2f !important; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
         .wood-card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(61,43,31,0.1); border: 1px solid #e0d5c1; }
+        /* 拖曳時的樣式 */
+        .sortable-ghost { opacity: 0.4; background: #e0d5c1 !important; }
+        .sortable-drag { cursor: grabbing; }
+        .book-item { cursor: grab; }
+        .book-item:active { cursor: grabbing; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -46,11 +52,7 @@
             </div>
 
             <div class="wood-card p-6">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-lg font-bold"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用</h2>
-                    <button id="toggleBookListBtn" onclick="toggleBookList()" class="text-[11px] text-stone-500 hover:text-stone-800 transition hidden">展開全部</button>
-                </div>
-                
+                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
                 <div class="space-y-3 mb-6">
                     <input type="text" id="newBookName" placeholder="教材名稱..." class="w-full border-b p-1 text-sm outline-none bg-transparent">
                     <div class="flex flex-col gap-2">
@@ -61,6 +63,10 @@
                 </div>
                 
                 <ul id="bookList" class="space-y-3"></ul>
+                
+                <div class="mt-4 text-center">
+                    <button id="toggleBookListBtn" onclick="toggleBookList()" class="text-[11px] text-stone-500 hover:text-stone-800 transition hidden border px-3 py-1 rounded-full">展開全部教材</button>
+                </div>
             </div>
         </div>
 
@@ -118,7 +124,22 @@
         let selectedDateStr = "";
         let pendingBookIndex = null;
         let dateMode = ""; 
-        let isBookListExpanded = false; // 控制列表展開狀態
+        let isBookListExpanded = false;
+
+        // 初始化拖曳功能
+        const bookListEl = document.getElementById('bookList');
+        Sortable.create(bookListEl, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function (evt) {
+                // 當拖曳結束時，重新排列 db.books 中的順序
+                const item = db.books.splice(evt.oldIndex, 1)[0];
+                db.books.splice(evt.newIndex, 0, item);
+                saveDB();
+                // 如果是在收摺狀態下排序，重新渲染以確保顯示前 3 本
+                updateStats(); 
+            },
+        });
 
         function updateStats() {
             let mins = 0, lessons = 0;
@@ -130,21 +151,19 @@
             const toggleBtn = document.getElementById('toggleBookListBtn');
             list.innerHTML = '';
 
-            // 判斷是否需要顯示切換按鈕
             if (db.books.length > 3) {
                 toggleBtn.classList.remove('hidden');
-                toggleBtn.innerText = isBookListExpanded ? "收起列表" : "展開全部";
+                toggleBtn.innerText = isBookListExpanded ? "收起教材列表" : "展開全部教材";
             } else {
                 toggleBtn.classList.add('hidden');
                 isBookListExpanded = true; 
             }
 
-            // 根據狀態決定渲染多少教材
-            const booksToShow = isBookListExpanded ? db.books : db.books.slice(0, 3);
-
-            booksToShow.forEach((b, i) => {
-                const actualIndex = i; // 這裡簡化處理，如需配合刪除請使用原始 ID
-                list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
+            // 渲染時加上 book-item class 以支援拖曳樣式
+            db.books.forEach((b, i) => {
+                const li = document.createElement('li');
+                li.className = `book-item p-3 bg-stone-50 rounded-lg border border-stone-200 ${(!isBookListExpanded && i >= 3) ? 'hidden' : ''}`;
+                li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-[13px] font-bold text-amber-900 leading-tight">${b.name}</span>
                         <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400 hover:text-red-500 transition ml-2 whitespace-nowrap">刪除</button>
@@ -154,7 +173,8 @@
                         結束：${b.end || '學習中'}
                         ${!b.end ? `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-600 underline font-bold">設定完練</button>` : `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-400 underline italic">修改</button>`}
                     </div>
-                </li>`;
+                `;
+                list.appendChild(li);
             });
         }
 
@@ -163,7 +183,6 @@
             updateStats();
         }
 
-        // --- 其他原有功能函數 (保持不變) ---
         function renderCalendar() {
             const year = currentViewDate.getFullYear(), month = currentViewDate.getMonth();
             document.getElementById('calendarTitle').innerText = `${year}年 ${month + 1}月`;
@@ -201,7 +220,7 @@
         function addBook() {
             const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
             if (name) { 
-                db.books.unshift({ name, start, end: null }); // 新增的排在最前面
+                db.books.unshift({ name, start, end: null }); 
                 saveDB(); updateStats(); document.getElementById('newBookName').value = ''; 
             }
         }
