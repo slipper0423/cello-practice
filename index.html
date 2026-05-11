@@ -27,9 +27,12 @@
         /* 教材顏色小點 */
         .book-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 2px; }
         
-        /* 顏色選擇器樣式 */
-        .color-picker-item { width: 20px; height: 20px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
-        .color-picker-item.active { border-color: #4a3728; transform: scale(1.1); }
+        /* 調色盤與選單 */
+        .palette-trigger { cursor: pointer; color: #a89a8e; transition: 0.2s; }
+        .palette-trigger:hover { color: #4a3728; }
+        #colorMenu { display: none; position: absolute; right: 0; top: 30px; background: white; border: 1px solid #e0d5c1; padding: 8px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; gap: 8px; }
+        .color-picker-item { width: 18px; height: 18px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); }
+        .color-picker-item:hover { transform: scale(1.1); }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -67,14 +70,15 @@
             <div class="wood-card p-6">
                 <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
                 <div class="space-y-3 mb-6">
-                    <div class="flex gap-2 items-center">
+                    <div class="relative flex gap-2 items-center">
                         <input type="text" id="newBookName" placeholder="教材名稱..." class="flex-1 border-b p-1 text-sm outline-none bg-transparent">
-                        <div id="colorOptions" class="flex gap-1">
-                            <div class="color-picker-item active" style="background: #94a7ae;" data-color="#94a7ae"></div>
-                            <div class="color-picker-item" style="background: #b8a39e;" data-color="#b8a39e"></div>
-                            <div class="color-picker-item" style="background: #a3b89e;" data-color="#a3b89e"></div>
-                            <div class="color-picker-item" style="background: #b8b19e;" data-color="#b8b19e"></div>
-                            <div class="color-picker-item" style="background: #a79eb8;" data-color="#a79eb8"></div>
+                        <div class="palette-trigger" onclick="toggleColorMenu()"><i class="fa-solid fa-palette text-lg"></i></div>
+                        <div id="colorMenu" class="flex">
+                            <div class="color-picker-item" style="background: #6d828a;" data-color="#6d828a"></div>
+                            <div class="color-picker-item" style="background: #a38b85;" data-color="#a38b85"></div>
+                            <div class="color-picker-item" style="background: #879681;" data-color="#879681"></div>
+                            <div class="color-picker-item" style="background: #948c75;" data-color="#948c75"></div>
+                            <div class="color-picker-item" style="background: #8a8196;" data-color="#8a8196"></div>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2">
@@ -92,12 +96,10 @@
             </div>
         </div>
 
-        <div class="mt-8 space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <button onclick="exportData()" class="border border-amber-900 text-amber-900 py-2 rounded-lg text-sm hover:bg-amber-50 transition font-bold">匯出備份</button>
-                <button onclick="document.getElementById('importFile').click()" class="w-full border border-gray-400 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50 transition font-bold">匯入備份</button>
-                <input type="file" id="importFile" class="hidden" onchange="importData(event)">
-            </div>
+        <div class="mt-8">
+            <button onclick="exportData()" class="border border-amber-900 text-amber-900 px-4 py-2 rounded-lg text-sm hover:bg-amber-50 transition font-bold">匯出備份</button>
+            <button onclick="document.getElementById('importFile').click()" class="ml-2 border border-gray-400 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition font-bold">匯入備份</button>
+            <input type="file" id="importFile" class="hidden" onchange="importData(event)">
         </div>
     </div>
 
@@ -125,11 +127,11 @@
 
     <div id="bookDateModal" class="modal">
         <div class="wood-card p-8 w-80 relative">
-            <h3 id="dateModalTitle" class="text-lg font-bold mb-4">設定日期</h3>
+            <h3 id="dateModalTitle" class="text-lg font-bold mb-4 text-amber-900">設定日期</h3>
             <input type="date" id="dateModalInput" class="w-full border p-2 mb-4 rounded">
             <div class="flex gap-2">
-                <button onclick="confirmBookDate()" class="flex-1 bg-stone-700 text-white py-2 rounded">確定</button>
-                <button onclick="closeBookDateModal()" class="flex-1 border py-2 rounded">取消</button>
+                <button onclick="confirmBookDate()" class="flex-1 bg-stone-700 text-white py-2 rounded font-bold">確定</button>
+                <button onclick="closeBookDateModal()" class="flex-1 border py-2 rounded font-bold">取消</button>
             </div>
         </div>
     </div>
@@ -141,15 +143,22 @@
         let db = JSON.parse(localStorage.getItem('celloPureLogDB')) || { logs: {}, books: [] };
         let currentViewDate = new Date(2025, 0, 1);
         let selectedDateStr = "";
-        let selectedColor = "#94a7ae";
+        let selectedColor = "#6d828a"; // 預設色
         let isBookListExpanded = false;
+        let pendingBookIndex = null;
+        let dateMode = "";
 
-        // 顏色選擇器邏輯
+        // 調色盤功能
+        function toggleColorMenu() {
+            const menu = document.getElementById('colorMenu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
         document.querySelectorAll('.color-picker-item').forEach(item => {
             item.onclick = () => {
-                document.querySelectorAll('.color-picker-item').forEach(el => el.classList.remove('active'));
-                item.classList.add('active');
                 selectedColor = item.dataset.color;
+                document.getElementById('newBookName').style.color = selectedColor;
+                document.getElementById('colorMenu').style.display = 'none';
             };
         });
 
@@ -182,20 +191,21 @@
             } else { toggleBtn.classList.add('hidden'); isBookListExpanded = true; }
 
             db.books.forEach((b, i) => {
-                // 更新教材列表
                 const li = document.createElement('li');
-                li.className = `book-item p-3 bg-stone-50 rounded-lg border-l-4 ${(!isBookListExpanded && i >= 3) ? 'hidden' : ''}`;
-                li.style.borderLeftColor = b.color || '#e0d5c1';
+                li.className = `book-item p-3 bg-stone-50 rounded-lg border border-stone-200 ${(!isBookListExpanded && i >= 3) ? 'hidden' : ''}`;
                 li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold text-amber-900">${b.name}</span>
+                        <span class="text-[13px] font-bold leading-tight" style="color: ${b.color || '#4a3728'}">${b.name}</span>
                         <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400">刪除</button>
                     </div>
-                    <div class="text-[11px] text-gray-500 italic">開始：${b.start || '無'}</div>
+                    <div class="text-[11px] text-gray-500">
+                        開始：${b.start || '無'} <button onclick="openDateModal(${i}, 'start')" class="ml-1 underline italic">修改</button><br>
+                        結束：${b.end || '學習中'} 
+                        ${!b.end ? `<button onclick="openDateModal(${i}, 'end')" class="ml-1 underline font-bold text-stone-700">設定完練</button>` : `<button onclick="openDateModal(${i}, 'end')" class="ml-1 underline italic">修改</button>`}
+                    </div>
                 `;
                 list.appendChild(li);
 
-                // 更新打卡彈窗的下拉選單
                 const opt = document.createElement('option');
                 opt.value = b.name;
                 opt.innerText = b.name;
@@ -218,7 +228,6 @@
                 let activeClass = log ? (log.isLesson ? "day-lesson" : "day-active") : "";
                 dayEl.className = `day-cell ${activeClass}`;
                 
-                // 找出對應教材顏色
                 let dotHtml = "";
                 if (log && log.bookName) {
                     const book = db.books.find(b => b.name === log.bookName);
@@ -230,6 +239,32 @@
                 body.appendChild(dayEl);
             }
             updateStats();
+        }
+
+        function openDateModal(i, mode) {
+            pendingBookIndex = i; dateMode = mode;
+            document.getElementById('dateModalTitle').innerText = mode === 'start' ? "設定開始日期" : "設定完練日期";
+            document.getElementById('dateModalInput').value = mode === 'start' ? (db.books[i].start || todayStr) : (db.books[i].end || todayStr);
+            document.getElementById('bookDateModal').style.display = 'flex';
+        }
+        function closeBookDateModal() { document.getElementById('bookDateModal').style.display = 'none'; }
+        function confirmBookDate() {
+            const date = document.getElementById('dateModalInput').value;
+            if (date) {
+                if (dateMode === 'start') db.books[pendingBookIndex].start = date;
+                else db.books[pendingBookIndex].end = date;
+                saveDB(); updateStats(); closeBookDateModal();
+            }
+        }
+
+        function addBook() {
+            const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
+            if (name) { 
+                db.books.unshift({ name, start, end: null, color: selectedColor }); 
+                saveDB(); updateStats(); 
+                document.getElementById('newBookName').value = '';
+                document.getElementById('newBookName').style.color = '#4a3728';
+            }
         }
 
         function openModal(d) {
@@ -251,20 +286,13 @@
             saveDB(); closeModal(); renderCalendar();
         }
 
-        function addBook() {
-            const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
-            if (name) { 
-                db.books.unshift({ name, start, end: null, color: selectedColor }); 
-                saveDB(); updateStats(); document.getElementById('newBookName').value = ''; 
-            }
-        }
-
         function toggleBookList() { isBookListExpanded = !isBookListExpanded; updateStats(); }
         function closeModal() { document.getElementById('logModal').style.display = 'none'; }
         function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
         function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
         function deleteEntry() { delete db.logs[selectedDateStr]; saveDB(); closeModal(); renderCalendar(); }
         function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
+        
         function exportData() {
             const dataStr = JSON.stringify(db);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -282,7 +310,6 @@
             };
             reader.readAsText(file);
         }
-        function resetAllData() { if (confirm("確定清空？")) { db = { logs: {}, books: [] }; saveDB(); renderCalendar(); } }
 
         renderCalendar();
     </script>
