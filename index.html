@@ -28,7 +28,7 @@
             </div>
             <div class="wood-card p-6 text-center">
                 <div class="text-gray-500 text-sm">累積上課次數</div>
-                <div id="statTotalLessons" class="text-3xl font-bold text-red-700">0</div>
+                <div id="statTotalLessons" class="text-3xl font-bold text-amber-900">0</div>
             </div>
         </div>
 
@@ -106,7 +106,20 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('celloPureLogDB')) || { logs: {}, books: [] };
+        const todayStr = new Date().toISOString().split('T')[0];
+        const defaultBooks = [
+            { name: "Essential Elements Book 1", start: todayStr, end: null },
+            { name: "Strictly Strings Book 1", start: todayStr, end: null },
+            { name: "Suzuki Vol.1", start: todayStr, end: null }
+        ];
+
+        let db = JSON.parse(localStorage.getItem('celloPureLogDB'));
+        
+        // 如果是第一次開啟，或是剛重製完，就載入預設教材
+        if (!db || (db.logs && Object.keys(db.logs).length === 0 && db.books.length === 0)) {
+            db = { logs: {}, books: defaultBooks };
+        }
+
         let currentViewDate = new Date(2025, 0, 1);
         let selectedDateStr = "";
         let pendingBookIndex = null;
@@ -139,28 +152,23 @@
             list.innerHTML = '';
             db.books.forEach((b, i) => {
                 list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
-                    <div class="flex justify-between font-bold text-amber-900"><span>${b.name}</span><button onclick="deleteBook(${i})" class="text-xs text-gray-400">刪除</button></div>
+                    <div class="flex justify-between font-bold text-amber-900"><span>${b.name}</span><button onclick="deleteBook(${i})" class="text-xs text-gray-400 hover:text-red-500 transition">刪除</button></div>
                     <div class="text-[10px] text-gray-500 mt-1">開始：${b.start || '無'}<br>結束：${b.end || '學習中'}
-                    ${!b.end ? `<button onclick="showBookModal(${i})" class="ml-2 text-stone-600 underline">設定完練</button>` : ''}</div>
+                    ${!b.end ? `<button onclick="showBookModal(${i})" class="ml-2 text-stone-600 underline font-bold">設定完練</button>` : ''}</div>
                 </li>`;
             });
         }
 
-        // 重製功能
         function resetAllData() {
-            const firstConfirm = confirm("⚠️ 注意：這將會永久刪除所有練琴時數和教材紀錄！");
-            if (firstConfirm) {
-                const secondConfirm = confirm("您真的確定要清空嗎？此動作無法復原。建議您清空前先進行『匯出備份』。");
-                if (secondConfirm) {
-                    db = { logs: {}, books: [] };
+            if (confirm("⚠️ 注意：這將會永久刪除所有紀錄！")) {
+                if (confirm("您真的確定要清空嗎？清空後將恢復預設教材。")) {
+                    db = { logs: {}, books: defaultBooks };
                     saveDB();
                     renderCalendar();
-                    alert("紀錄已全數清空。");
                 }
             }
         }
 
-        // 基本與同步功能
         function exportData() {
             const dataStr = JSON.stringify(db);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
