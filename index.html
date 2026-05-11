@@ -12,21 +12,19 @@
         body { font-family: 'Noto Serif TC', serif; background-color: #fdfaf5; color: #4a3728; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         
-        /* 基礎日期格樣式 */
         .day-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid #eee5d8; font-size: 0.8rem; background: white; }
         .day-cell:hover { background-color: #fcf8f0; }
         
-        /* 純練習日樣式 (左側淺黃米色) */
         .day-active { background-color: #e9e4bc !important; color: #6d664d !important; border-color: #dad4a2 !important; }
-        
-        /* 上課日樣式 (右側墨綠色) */
         .day-lesson { background-color: #a8ad8d !important; color: white !important; border-color: #8e9475 !important; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
         .wood-card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(61,43,31,0.1); border: 1px solid #e0d5c1; }
-        .sortable-ghost { opacity: 0.4; background: #e0d5c1 !important; }
-        .book-item { cursor: grab; }
-        .book-item:active { cursor: grabbing; }
+        
+        /* 莫蘭迪顏色選擇器樣式 */
+        .color-dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .color-dot:hover { transform: scale(1.1); }
+        .color-dot.active { border-color: #4a3728; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -62,7 +60,7 @@
             </div>
 
             <div class="wood-card p-6">
-                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
+                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材管理</h2>
                 <div class="space-y-3 mb-6">
                     <input type="text" id="newBookName" placeholder="教材名稱..." class="w-full border-b p-1 text-sm outline-none bg-transparent">
                     <div class="flex flex-col gap-2">
@@ -92,9 +90,29 @@
                     </button>
                 </div>
             </div>
-            <button onclick="resetAllData()" class="w-full border border-red-200 text-red-400 py-2 rounded-lg text-xs hover:bg-red-50 transition font-bold">
-                <i class="fa-solid fa-trash-can mr-1"></i> 清空所有紀錄
+            <button onclick="confirmReset()" class="w-full border border-red-200 text-red-400 py-2 rounded-lg text-xs hover:bg-red-50 transition font-bold">
+                <i class="fa-solid fa-trash-can mr-1"></i> 重製功能 (清空紀錄)
             </button>
+        </div>
+    </div>
+
+    <div id="colorModal" class="modal">
+        <div class="wood-card p-6 w-64 relative">
+            <h3 class="text-sm font-bold mb-4 text-amber-900">選擇標記顏色</h3>
+            <div class="flex justify-between mb-6" id="colorPickerOptions">
+                <div class="color-dot" style="background: #949c94;" onclick="selectColor('#949c94')"></div> <div class="color-dot" style="background: #8e9fb1;" onclick="selectColor('#8e9fb1')"></div> <div class="color-dot" style="background: #a68a8a;" onclick="selectColor('#a68a8a')"></div> <div class="color-dot" style="background: #c7c1b5;" onclick="selectColor('#c7c1b5')"></div> <div class="color-dot" style="background: #8c7b70;" onclick="selectColor('#8c7b70')"></div> </div>
+            <button onclick="closeColorModal()" class="w-full text-xs text-gray-400 underline">取消</button>
+        </div>
+    </div>
+
+    <div id="resetConfirmModal" class="modal">
+        <div class="wood-card p-8 w-80 text-center">
+            <h3 class="text-lg font-bold mb-2 text-red-600">確定要清空紀錄嗎？</h3>
+            <p class="text-sm text-gray-500 mb-6">此動作將刪除所有練習紀錄與教材，且無法復原。</p>
+            <div class="flex gap-2">
+                <button onclick="executeReset()" class="flex-1 bg-red-500 text-white py-2 rounded font-bold">確定重製</button>
+                <button onclick="closeResetModal()" class="flex-1 border py-2 rounded font-bold">取消</button>
+            </div>
         </div>
     </div>
 
@@ -126,7 +144,6 @@
     </div>
 
     <script>
-        // --- 核心邏輯保持不變 ---
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('newBookStart').value = todayStr;
 
@@ -170,12 +187,22 @@
             db.books.forEach((b, i) => {
                 const li = document.createElement('li');
                 li.className = `book-item p-3 bg-stone-50 rounded-lg border border-stone-200 ${(!isBookListExpanded && i >= 3) ? 'hidden' : ''}`;
+                
+                // 檢查是否有顏色，若無則預設為米灰色
+                const bookColor = b.color || '#c7c1b5';
+
                 li.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold text-amber-900 leading-tight">${b.name}</span>
+                        <div class="flex items-center overflow-hidden">
+                            <span class="w-1.5 h-4 rounded-full mr-2 flex-shrink-0" style="background: ${bookColor}"></span>
+                            <span class="text-[13px] font-bold text-amber-900 leading-tight truncate">${b.name}</span>
+                            <button onclick="openColorModal(${i})" class="ml-2 text-stone-400 hover:text-stone-600">
+                                <i class="fa-solid fa-palette text-[11px]"></i>
+                            </button>
+                        </div>
                         <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400 hover:text-red-500 transition ml-2 whitespace-nowrap">刪除</button>
                     </div>
-                    <div class="text-[12px] text-gray-600">
+                    <div class="text-[12px] text-gray-600 ml-3">
                         開始：${b.start || '無'} <button onclick="openDateModal(${i}, 'start')" class="ml-1 text-stone-400 underline italic">修改</button><br>
                         結束：${b.end || '學習中'}
                         ${!b.end ? `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-600 underline font-bold">設定完練</button>` : `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-400 underline italic">修改</button>`}
@@ -185,6 +212,41 @@
             });
         }
 
+        // --- 顏色選擇邏輯 ---
+        function openColorModal(index) {
+            pendingBookIndex = index;
+            document.getElementById('colorModal').style.display = 'flex';
+        }
+
+        function selectColor(color) {
+            db.books[pendingBookIndex].color = color;
+            saveDB();
+            updateStats();
+            closeColorModal();
+        }
+
+        function closeColorModal() {
+            document.getElementById('colorModal').style.display = 'none';
+        }
+
+        // --- 重製功能帶確認彈窗 ---
+        function confirmReset() {
+            document.getElementById('resetConfirmModal').style.display = 'flex';
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetConfirmModal').style.display = 'none';
+        }
+
+        function executeReset() {
+            db = { logs: {}, books: [] };
+            saveDB();
+            renderCalendar();
+            closeResetModal();
+            alert("紀錄已成功重製");
+        }
+
+        // --- 以下為原有核心邏輯 ---
         function toggleBookList() { isBookListExpanded = !isBookListExpanded; updateStats(); }
 
         function renderCalendar() {
@@ -198,7 +260,6 @@
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const log = db.logs[dateStr];
                 const dayEl = document.createElement('div');
-                // 根據練習或上課套用不同 Class
                 let activeClass = "";
                 if (log) {
                     activeClass = log.isLesson ? "day-lesson" : "day-active";
@@ -229,12 +290,13 @@
         function addBook() {
             const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
             if (name) { 
-                db.books.unshift({ name, start, end: null }); 
+                db.books.unshift({ name, start, end: null, color: '#c7c1b5' }); 
                 saveDB(); updateStats(); document.getElementById('newBookName').value = ''; 
             }
         }
         function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
         function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
+        
         function openModal(d) {
             selectedDateStr = d; document.getElementById('modalDate').innerText = d;
             const log = db.logs[d];
@@ -250,6 +312,7 @@
         }
         function deleteEntry() { delete db.logs[selectedDateStr]; saveDB(); closeModal(); renderCalendar(); }
         function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
+        
         function exportData() {
             const dataStr = JSON.stringify(db);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -269,7 +332,6 @@
             };
             reader.readAsText(file);
         }
-        function resetAllData() { if (confirm("確定清空？")) { db = { logs: {}, books: [] }; saveDB(); renderCalendar(); } }
 
         renderCalendar();
     </script>
