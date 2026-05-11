@@ -52,27 +52,26 @@
                     <div class="flex flex-col gap-2">
                         <label class="text-[10px] text-gray-400">開始日期</label>
                         <input type="date" id="newBookStart" class="text-xs border rounded p-1">
-                        <button onclick="addBook()" class="bg-stone-700 text-white px-4 py-2 rounded text-sm mt-1 hover:bg-stone-600 transition">新增教材</button>
+                        <button onclick="addBook()" class="bg-stone-700 text-white px-4 py-2 rounded text-sm mt-1 hover:bg-stone-600 transition font-bold">新增教材</button>
                     </div>
                 </div>
-                <ul id="bookList" class="space-y-4"></ul>
+                <ul id="bookList" class="space-y-3"></ul>
             </div>
         </div>
 
         <div class="mt-8 space-y-4">
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="exportData()" class="border border-amber-900 text-amber-900 py-2 rounded-lg text-sm hover:bg-amber-50 transition">
+                <button onclick="exportData()" class="border border-amber-900 text-amber-900 py-2 rounded-lg text-sm hover:bg-amber-50 transition font-bold">
                     <i class="fa-solid fa-download mr-1"></i> 匯出備份 (同步用)
                 </button>
                 <div class="relative">
                     <input type="file" id="importFile" class="hidden" onchange="importData(event)">
-                    <button onclick="document.getElementById('importFile').click()" class="w-full border border-gray-400 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50 transition">
+                    <button onclick="document.getElementById('importFile').click()" class="w-full border border-gray-400 text-gray-600 py-2 rounded-lg text-sm hover:bg-gray-50 transition font-bold">
                         <i class="fa-solid fa-upload mr-1"></i> 匯入備份
                     </button>
                 </div>
             </div>
-            
-            <button onclick="resetAllData()" class="w-full border border-red-200 text-red-400 py-2 rounded-lg text-xs hover:bg-red-50 transition">
+            <button onclick="resetAllData()" class="w-full border border-red-200 text-red-400 py-2 rounded-lg text-xs hover:bg-red-50 transition font-bold">
                 <i class="fa-solid fa-trash-can mr-1"></i> 重製所有紀錄 (清空所有資料)
             </button>
         </div>
@@ -88,7 +87,7 @@
                     <input type="number" id="logMinutes" value="60" class="w-full border-b p-2 text-xl font-bold outline-none">
                 </div>
                 <div class="flex items-center"><input type="checkbox" id="logIsLesson" class="mr-2"> <span class="text-sm">今日有上課</span></div>
-                <button onclick="saveEntry()" class="w-full bg-amber-900 text-white py-3 rounded-lg shadow-lg">儲存</button>
+                <button onclick="saveEntry()" class="w-full bg-amber-900 text-white py-3 rounded-lg shadow-lg font-bold">儲存</button>
                 <button id="deleteBtn" onclick="deleteEntry()" class="w-full text-red-500 text-xs mt-2 hidden">刪除紀錄</button>
             </div>
         </div>
@@ -99,23 +98,23 @@
             <h3 class="text-lg font-bold mb-4">這本何時練完？</h3>
             <input type="date" id="finishDateInput" class="w-full border p-2 mb-4 rounded">
             <div class="flex gap-2">
-                <button onclick="confirmFinishBook()" class="flex-1 bg-stone-700 text-white py-2 rounded">確定</button>
-                <button onclick="closeBookModal()" class="flex-1 border py-2 rounded">取消</button>
+                <button onclick="confirmFinishBook()" class="flex-1 bg-stone-700 text-white py-2 rounded font-bold">確定</button>
+                <button onclick="closeBookModal()" class="flex-1 border py-2 rounded font-bold">取消</button>
             </div>
         </div>
     </div>
 
     <script>
         const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('newBookStart').value = todayStr; // 預設新增日期為今天
+
         const defaultBooks = [
-            { name: "Essential Elements Book 1", start: todayStr, end: null },
-            { name: "Strictly Strings Book 1", start: todayStr, end: null },
-            { name: "Suzuki Vol.1", start: todayStr, end: null }
+            { name: "Essential Elements Book 1", start: "2025-01-01", end: null },
+            { name: "Strictly Strings Book 1", start: "2025-01-01", end: null },
+            { name: "Suzuki Vol.1", start: "2025-01-01", end: null }
         ];
 
         let db = JSON.parse(localStorage.getItem('celloPureLogDB'));
-        
-        // 如果是第一次開啟，或是剛重製完，就載入預設教材
         if (!db || (db.logs && Object.keys(db.logs).length === 0 && db.books.length === 0)) {
             db = { logs: {}, books: defaultBooks };
         }
@@ -152,9 +151,15 @@
             list.innerHTML = '';
             db.books.forEach((b, i) => {
                 list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
-                    <div class="flex justify-between font-bold text-amber-900"><span>${b.name}</span><button onclick="deleteBook(${i})" class="text-xs text-gray-400 hover:text-red-500 transition">刪除</button></div>
-                    <div class="text-[10px] text-gray-500 mt-1">開始：${b.start || '無'}<br>結束：${b.end || '學習中'}
-                    ${!b.end ? `<button onclick="showBookModal(${i})" class="ml-2 text-stone-600 underline font-bold">設定完練</button>` : ''}</div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[13px] font-bold text-amber-900 leading-tight">${b.name}</span>
+                        <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400 hover:text-red-500 transition ml-2 whitespace-nowrap">刪除</button>
+                    </div>
+                    <div class="text-[12px] text-gray-600">
+                        開始：${b.start || '無'}<br>
+                        結束：${b.end || '學習中'}
+                        ${!b.end ? `<button onclick="showBookModal(${i})" class="ml-1 text-stone-600 underline font-bold">設定完練</button>` : ''}
+                    </div>
                 </li>`;
             });
         }
@@ -197,26 +202,6 @@
         }
         function addBook() {
             const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
-            if (name) { db.books.push({ name, start, end: null }); saveDB(); updateStats(); document.getElementById('newBookName').value = ''; }
-        }
-        function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
-        function openModal(d) {
-            selectedDateStr = d; document.getElementById('modalDate').innerText = d;
-            const log = db.logs[d];
-            document.getElementById('logMinutes').value = log ? log.mins : 60;
-            document.getElementById('logIsLesson').checked = log ? log.isLesson : false;
-            document.getElementById('deleteBtn').classList.toggle('hidden', !log);
-            document.getElementById('logModal').style.display = 'flex';
-        }
-        function closeModal() { document.getElementById('logModal').style.display = 'none'; }
-        function saveEntry() {
-            db.logs[selectedDateStr] = { mins: parseInt(document.getElementById('logMinutes').value) || 0, isLesson: document.getElementById('logIsLesson').checked };
-            saveDB(); closeModal(); renderCalendar();
-        }
-        function deleteEntry() { delete db.logs[selectedDateStr]; saveDB(); closeModal(); renderCalendar(); }
-        function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
-        function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
-        renderCalendar();
-    </script>
-</body>
-</html>
+            if (name) { 
+                db.books.push({ name, start, end: null }); 
+                saveDB
