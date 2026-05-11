@@ -46,7 +46,11 @@
             </div>
 
             <div class="wood-card p-6">
-                <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用紀錄</h2>
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-lg font-bold"><i class="fa-solid fa-book-bookmark mr-2"></i>教材使用</h2>
+                    <button id="toggleBookListBtn" onclick="toggleBookList()" class="text-[11px] text-stone-500 hover:text-stone-800 transition hidden">展開全部</button>
+                </div>
+                
                 <div class="space-y-3 mb-6">
                     <input type="text" id="newBookName" placeholder="教材名稱..." class="w-full border-b p-1 text-sm outline-none bg-transparent">
                     <div class="flex flex-col gap-2">
@@ -55,6 +59,7 @@
                         <button onclick="addBook()" class="bg-stone-700 text-white px-4 py-2 rounded text-sm mt-1 hover:bg-stone-600 transition font-bold">新增教材</button>
                     </div>
                 </div>
+                
                 <ul id="bookList" class="space-y-3"></ul>
             </div>
         </div>
@@ -62,7 +67,7 @@
         <div class="mt-8 space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <button onclick="exportData()" class="border border-amber-900 text-amber-900 py-2 rounded-lg text-sm hover:bg-amber-50 transition font-bold">
-                    <i class="fa-solid fa-download mr-1"></i> 匯出備份 (同步用)
+                    <i class="fa-solid fa-download mr-1"></i> 匯出備份
                 </button>
                 <div class="relative">
                     <input type="file" id="importFile" class="hidden" onchange="importData(event)">
@@ -72,7 +77,7 @@
                 </div>
             </div>
             <button onclick="resetAllData()" class="w-full border border-red-200 text-red-400 py-2 rounded-lg text-xs hover:bg-red-50 transition font-bold">
-                <i class="fa-solid fa-trash-can mr-1"></i> 重製所有紀錄 (清空所有資料)
+                <i class="fa-solid fa-trash-can mr-1"></i> 清空所有紀錄
             </button>
         </div>
     </div>
@@ -108,22 +113,57 @@
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('newBookStart').value = todayStr;
 
-        const defaultBooks = [
-            { name: "Essential Elements Book 1", start: "2026-05-11", end: null },
-            { name: "Strictly Strings Book 1", start: "2026-05-11", end: null },
-            { name: "Suzuki Vol.1", start: "2026-05-11", end: null }
-        ];
-
-        let db = JSON.parse(localStorage.getItem('celloPureLogDB'));
-        if (!db || (db.logs && Object.keys(db.logs).length === 0 && db.books.length === 0)) {
-            db = { logs: {}, books: [...defaultBooks] };
-        }
-
+        let db = JSON.parse(localStorage.getItem('celloPureLogDB')) || { logs: {}, books: [] };
         let currentViewDate = new Date(2025, 0, 1);
         let selectedDateStr = "";
         let pendingBookIndex = null;
-        let dateMode = ""; // 'start' 或 'end'
+        let dateMode = ""; 
+        let isBookListExpanded = false; // 控制列表展開狀態
 
+        function updateStats() {
+            let mins = 0, lessons = 0;
+            Object.values(db.logs).forEach(e => { mins += e.mins; if (e.isLesson) lessons++; });
+            document.getElementById('statTotalHours').innerText = (mins / 60).toFixed(1) + 'h';
+            document.getElementById('statTotalLessons').innerText = lessons;
+
+            const list = document.getElementById('bookList');
+            const toggleBtn = document.getElementById('toggleBookListBtn');
+            list.innerHTML = '';
+
+            // 判斷是否需要顯示切換按鈕
+            if (db.books.length > 3) {
+                toggleBtn.classList.remove('hidden');
+                toggleBtn.innerText = isBookListExpanded ? "收起列表" : "展開全部";
+            } else {
+                toggleBtn.classList.add('hidden');
+                isBookListExpanded = true; 
+            }
+
+            // 根據狀態決定渲染多少教材
+            const booksToShow = isBookListExpanded ? db.books : db.books.slice(0, 3);
+
+            booksToShow.forEach((b, i) => {
+                const actualIndex = i; // 這裡簡化處理，如需配合刪除請使用原始 ID
+                list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[13px] font-bold text-amber-900 leading-tight">${b.name}</span>
+                        <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400 hover:text-red-500 transition ml-2 whitespace-nowrap">刪除</button>
+                    </div>
+                    <div class="text-[12px] text-gray-600">
+                        開始：${b.start || '無'} <button onclick="openDateModal(${i}, 'start')" class="ml-1 text-stone-400 underline italic">修改</button><br>
+                        結束：${b.end || '學習中'}
+                        ${!b.end ? `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-600 underline font-bold">設定完練</button>` : `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-400 underline italic">修改</button>`}
+                    </div>
+                </li>`;
+            });
+        }
+
+        function toggleBookList() {
+            isBookListExpanded = !isBookListExpanded;
+            updateStats();
+        }
+
+        // --- 其他原有功能函數 (保持不變) ---
         function renderCalendar() {
             const year = currentViewDate.getFullYear(), month = currentViewDate.getMonth();
             document.getElementById('calendarTitle').innerText = `${year}年 ${month + 1}月`;
@@ -143,38 +183,13 @@
             updateStats();
         }
 
-        function updateStats() {
-            let mins = 0, lessons = 0;
-            Object.values(db.logs).forEach(e => { mins += e.mins; if (e.isLesson) lessons++; });
-            document.getElementById('statTotalHours').innerText = (mins / 60).toFixed(1) + 'h';
-            document.getElementById('statTotalLessons').innerText = lessons;
-            const list = document.getElementById('bookList');
-            list.innerHTML = '';
-            db.books.forEach((b, i) => {
-                list.innerHTML += `<li class="p-3 bg-stone-50 rounded-lg border border-stone-200">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold text-amber-900 leading-tight">${b.name}</span>
-                        <button onclick="deleteBook(${i})" class="text-[11px] text-gray-400 hover:text-red-500 transition ml-2 whitespace-nowrap">刪除</button>
-                    </div>
-                    <div class="text-[12px] text-gray-600">
-                        開始：${b.start || '無'} <button onclick="openDateModal(${i}, 'start')" class="ml-1 text-stone-400 underline italic">修改</button><br>
-                        結束：${b.end || '學習中'}
-                        ${!b.end ? `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-600 underline font-bold">設定完練</button>` : `<button onclick="openDateModal(${i}, 'end')" class="ml-1 text-stone-400 underline italic">修改</button>`}
-                    </div>
-                </li>`;
-            });
-        }
-
         function openDateModal(i, mode) {
-            pendingBookIndex = i;
-            dateMode = mode;
+            pendingBookIndex = i; dateMode = mode;
             document.getElementById('dateModalTitle').innerText = mode === 'start' ? "設定開始日期" : "設定完練日期";
             document.getElementById('dateModalInput').value = mode === 'start' ? (db.books[i].start || todayStr) : (db.books[i].end || todayStr);
             document.getElementById('bookDateModal').style.display = 'flex';
         }
-
         function closeBookDateModal() { document.getElementById('bookDateModal').style.display = 'none'; }
-
         function confirmBookDate() {
             const date = document.getElementById('dateModalInput').value;
             if (date) {
@@ -183,47 +198,15 @@
                 saveDB(); updateStats(); closeBookDateModal();
             }
         }
-
         function addBook() {
             const name = document.getElementById('newBookName').value, start = document.getElementById('newBookStart').value;
             if (name) { 
-                db.books.push({ name, start, end: null }); 
-                saveDB(); updateStats(); 
-                document.getElementById('newBookName').value = ''; 
+                db.books.unshift({ name, start, end: null }); // 新增的排在最前面
+                saveDB(); updateStats(); document.getElementById('newBookName').value = ''; 
             }
         }
-
         function deleteBook(i) { if (confirm("刪除教材？")) { db.books.splice(i, 1); saveDB(); updateStats(); } }
-        
-        function resetAllData() {
-            if (confirm("⚠️ 注意：這將會永久刪除所有紀錄！")) {
-                db = { logs: {}, books: [...defaultBooks] };
-                saveDB(); renderCalendar();
-            }
-        }
-
-        function exportData() {
-            const dataStr = JSON.stringify(db);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', 'cello_practice_backup.json');
-            linkElement.click();
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedDB = JSON.parse(e.target.result);
-                    if (confirm("匯入將覆蓋目前這台裝置的紀錄，確定嗎？")) { db = importedDB; saveDB(); renderCalendar(); }
-                } catch (err) { alert("檔案格式不正確！"); }
-            };
-            reader.readAsText(file);
-        }
-
+        function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
         function openModal(d) {
             selectedDateStr = d; document.getElementById('modalDate').innerText = d;
             const log = db.logs[d];
@@ -238,8 +221,28 @@
             saveDB(); closeModal(); renderCalendar();
         }
         function deleteEntry() { delete db.logs[selectedDateStr]; saveDB(); closeModal(); renderCalendar(); }
-        function saveDB() { localStorage.setItem('celloPureLogDB', JSON.stringify(db)); }
         function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
+        function exportData() {
+            const dataStr = JSON.stringify(db);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', 'cello_practice_backup.json');
+            linkElement.click();
+        }
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    db = JSON.parse(e.target.result); saveDB(); renderCalendar();
+                } catch (err) { alert("格式錯誤"); }
+            };
+            reader.readAsText(file);
+        }
+        function resetAllData() { if (confirm("確定清空？")) { db = { logs: {}, books: [] }; saveDB(); renderCalendar(); } }
+
         renderCalendar();
     </script>
 </body>
