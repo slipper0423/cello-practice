@@ -32,7 +32,7 @@
     <div class="max-w-4xl mx-auto pb-20">
         <div class="grid grid-cols-2 gap-4 mb-8">
             <div class="wood-card p-6 text-center">
-                <div class="text-gray-500 text-sm">2025 總累積時數</div>
+                <div class="text-gray-500 text-sm">總累積時數</div>
                 <div id="statTotalHours" class="text-3xl font-bold text-amber-900">0.0h</div>
             </div>
             <div class="wood-card p-6 text-center">
@@ -148,7 +148,11 @@
         document.getElementById('newBookStart').value = todayStr;
 
         let db = JSON.parse(localStorage.getItem('celloPureLogDB')) || { logs: {}, books: [] };
-        let currentViewDate = new Date(2025, 0, 1);
+        
+        // 【修改這裡】將原本固定的 2025年1月1日 改為今天的日期物件
+        const now = new Date();
+        let currentViewDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        
         let selectedDateStr = "";
         let pendingBookIndex = null;
         let dateMode = ""; 
